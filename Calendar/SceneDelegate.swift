@@ -6,33 +6,41 @@
 //
 
 import UIKit
+import SwiftUI
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
-
+    var splitView: UISplitViewController?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let windowScene = (scene as? UIWindowScene) else { return }
-        window = UIWindow(frame: windowScene.coordinateSpace.bounds)
-        window?.windowScene = windowScene
+        self.makeSplitViewController()
+        guard let windowScene = scene as? UIWindowScene else { return }
         
-        let baseViewController = UIViewController()
-        baseViewController.view.backgroundColor = .systemGray6
-        let rootViewController = CalendarViewController()
-        let navigationController = UINavigationController(rootViewController: rootViewController)
+        let window = UIWindow(windowScene: windowScene)
+        window.rootViewController = self.splitView
+        self.window = window
+        window.makeKeyAndVisible()
         
-        // Fix for the black navigation bar on iOS 15
-        navigationController.willMove(toParent: baseViewController)
-        baseViewController.addChild(navigationController)
-        baseViewController.view.addSubview(navigationController.view)
-        navigationController.didMove(toParent: baseViewController)
+        self.splitView?.viewController(for: .secondary)?.navigationController?.navigationBar.barStyle = .black
+    }
+    
+    func makeSplitViewController() {
+        let splitViewController = UISplitViewController(style: .doubleColumn)
+        splitViewController.preferredDisplayMode = .oneBesideSecondary
         
-        window?.rootViewController = baseViewController
-        window?.makeKeyAndVisible()
+//        let primaryViewController = UINavigationController(rootViewController: CalendarViewController())
+        let primaryViewController = UIHostingController(rootView: CalendarView().ignoresSafeArea(.all, edges: .top)) // -> works with SwiftUI View
+        let secondaryViewController = UIHostingController(rootView: EventDetailView())
+        
+        splitViewController.setViewController(primaryViewController, for: .primary)
+        splitViewController.setViewController(secondaryViewController, for: .secondary)
+        splitViewController.setViewController(primaryViewController, for: .compact)
+        
+        self.splitView = splitViewController
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
